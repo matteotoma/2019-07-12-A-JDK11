@@ -5,8 +5,14 @@
 package it.polito.tdp.food;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 
+import it.polito.tdp.food.model.Food;
+import it.polito.tdp.food.model.FoodAndCalories;
 import it.polito.tdp.food.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -41,7 +47,7 @@ public class FoodController {
     private Button btnSimula; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxFood"
-    private ComboBox<?> boxFood; // Value injected by FXMLLoader
+    private ComboBox<Food> boxFood; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
@@ -49,19 +55,68 @@ public class FoodController {
     @FXML
     void doCreaGrafo(ActionEvent event) {
     	txtResult.clear();
-    	txtResult.appendText("Creazione grafo...");
+    	txtResult.appendText("Creazione grafo...\n");
+    	int porzioniMax;
+    	try {
+    		porzioniMax = Integer.parseInt(txtPorzioni.getText());
+    	}
+    	catch(NumberFormatException e) {
+    		txtResult.appendText("Devi inserire un numero intero");
+    		return;
+    	}
+    	model.creaGrafo(porzioniMax);
+    	setBox(model.getVertici());
+    	txtResult.appendText(String.format("Grafo creato con %d vertici e %d archi\n", model.getVertici().size(), model.getNArchi()));
     }
     
-    @FXML
+    private void setBox(Set<Food> vertici) {
+    	List<Food> list = new ArrayList<>(vertici);
+    	Collections.sort(list);
+    	this.boxFood.getItems().addAll(list);
+	}
+
+	@FXML
     void doCalorie(ActionEvent event) {
     	txtResult.clear();
-    	txtResult.appendText("Analisi calorie...");
+    	txtResult.appendText("Analisi calorie...\n");
+    	Food f = boxFood.getValue();
+    	if(f == null) {
+    		txtResult.appendText("Devi selezionare un cibo");
+    		return;
+    	}
+    	List<FoodAndCalories> result = model.elencoConnessi(f);
+    	if(result.size() == 0)
+    		txtResult.appendText("Vertice isolato");
+    	else {
+    		Collections.sort(result);
+    		for(int i=0; i<5; i++)
+    			txtResult.appendText(String.format("%s %f\n", result.get(i).getF().getDisplay_name(), result.get(i).getCalories()));
+    	}
     }
 
     @FXML
     void doSimula(ActionEvent event) {
     	txtResult.clear();
-    	txtResult.appendText("Simulazione...");
+    	txtResult.appendText("Simulazione...\n");
+    	int k;
+    	Food f = boxFood.getValue();
+    	if(f == null) {
+    		txtResult.appendText("Devi selezionare un cibo");
+    		return;
+    	}
+    	try {
+    		k = Integer.parseInt(this.txtK.getText());
+    	}
+    	catch(NumberFormatException e) {
+    		txtResult.appendText("Devi inserire un numero intero");
+    		return;
+    	}
+    	if(k<1 || k>10) {
+    		txtResult.appendText("Devi inserire un numero compreso tra 1 e 10");
+    		return;
+    	}
+    	model.simulazione(k, f);
+    	txtResult.appendText(String.format("Cibi preparati: %d. Tempo di preparazione: %f\n", model.getCibiPreparati(), model.getTempoPreparazione()));
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
